@@ -52,7 +52,7 @@
       display: flex; 
       justify-content: center; 
       align-items: center; 
-      min-width: 0; /* Previene desbordamientos en Flexbox */
+      min-width: 0;
     }
     svg { 
       width: 100%; 
@@ -171,7 +171,7 @@
       font-style: italic; 
     }
 
-    /* Reglas Responsive para Dispositivos Móviles y Tablets */
+    /* Adaptación Responsiva para Celulares y Tablets */
     @media (max-width: 820px) {
       .layout {
         flex-direction: column;
@@ -256,7 +256,7 @@
   </div>
 
   <script>
-    const data = {"norte":{"nombre":"Sector Norte","direccion":"LTR","filas":[{"nombre":"F2","asientos":20},{"nombre":"F1","asientos":20},{"nombre":"F4","asientos":20},{"nombre":"F3","asientos":20}]},"noroeste":{"nombre":"Sector Noroeste","direccion":"LTR","filas":[{"nombre":"F1","asientos":10},{"nombre":"F2","asientos":12},{"nombre":"F3","asientos":14},{"nombre":"F4","asientos":16}]},"oeste_visitante":{"nombre":"Oeste (Visitante)","direccion":"LTR","filas":[{"nombre":"F1","asientos":15},{"nombre":"F2","asientos":15},{"nombre":"F3","asientos":15},{"nombre":"F4","asientos":15}]},"oeste_local":{"nombre":"Oeste (Local)","direccion":"LTR","filas":[{"nombre":"F1","asientos":15},{"nombre":"F2","asientos":15},{"nombre":"F3","asientos":15},{"nombre":"F4","asientos":15}]},"sur":{"nombre":"Sector Sur","direccion":"LTR","filas":[{"nombre":"F1","asientos":22},{"nombre":"F2","asientos":22},{"nombre":"F3","asientos":22},{"nombre":"F4","asientos":22}]},"este":{"nombre":"Sector Este","direccion":"LTR","filas":[{"nombre":"F1","asientos":12},{"nombre":"F2","asientos":12},{"nombre":"F3","asientos":12},{"nombre":"F4","asientos":12}]}};
+    const data = {"norte":{"nombre":"Sector Norte","direccion":"RTL","filas":[{"nombre":"F1","asientos":20},{"nombre":"F2","asientos":20},{"nombre":"F3","asientos":20},{"nombre":"F4","asientos":20},{"nombre":"F5","asientos":20}]},"noroeste":{"nombre":"Sector Noroeste","direccion":"LTR","filas":[{"nombre":"F1","asientos":10},{"nombre":"F2","asientos":12},{"nombre":"F3","asientos":14},{"nombre":"F4","asientos":16}]},"oeste_visitante":{"nombre":"Oeste (Visitante)","direccion":"LTR","filas":[{"nombre":"F1","asientos":15},{"nombre":"F2","asientos":15},{"nombre":"F3","asientos":15},{"nombre":"F4","asientos":15}]},"oeste_local":{"nombre":"Oeste (Local)","direccion":"LTR","filas":[{"nombre":"F1","asientos":15},{"nombre":"F2","asientos":15},{"nombre":"F3","asientos":15},{"nombre":"F4","asientos":15}]},"sur":{"nombre":"Sector Sur","direccion":"LTR","filas":[{"nombre":"F1","asientos":22},{"nombre":"F2","asientos":22},{"nombre":"F3","asientos":22},{"nombre":"F4","asientos":22}]},"este":{"nombre":"Sector Este","direccion":"LTR","filas":[{"nombre":"F1","asientos":12},{"nombre":"F2","asientos":12},{"nombre":"F3","asientos":12},{"nombre":"F4","asientos":12}]}};
     let activeSeatBtn = null;
 
     function loadSector(key) {
