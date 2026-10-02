@@ -444,7 +444,7 @@
       document.getElementById('modalHistorial').style.display = 'none';
     }
 
-    // --- CARGAR MENÚ Y LOGICA DE CHECKOUT ---
+    // --- CARGAR MENÚ Y LOGICA DE CHECKOUT CON MANEJO MULTIFORMATO DE IMÁGENES ---
     async function cargarMenu() {
       const contenedor = document.getElementById('contenedorMenu');
       
@@ -489,6 +489,9 @@
         document.getElementById('lblSubEnvio').innerText = `(+$1000)`;
       }
 
+      // Imagen neutra por defecto si no tiene o si la URL falla al cargar
+      const placeholderImg = "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&auto=format&fit=crop";
+
       contenedor.innerHTML = "";
       for (const [catNombre, subcats] of Object.entries(agrupado)) {
         let htmlCat = `<div class="seccion-cat"><h2 class="titulo-cat">${catNombre}</h2>`;
@@ -497,12 +500,23 @@
           htmlCat += `<h3 class="titulo-subcat">${subNombre}</h3><div class="grid-productos">`;
           
           prods.forEach(p => {
-            const imgUrl = (p.text && p.text.length > 5) ? p.text : 'https://via.placeholder.com/200x130?text=La+Griega';
+            // Buscamos la URL en el campo 'text' o 'imagen' y limpiamos espacios
+            let rawUrl = (p.text || p.imagen || "").toString().trim();
+
+            // Transformar enlaces de Google Drive a enlaces de visualización directa
+            if (rawUrl.includes("drive.google.com")) {
+              const driveId = rawUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || rawUrl.match(/id=([a-zA-Z0-9_-]+)/);
+              if (driveId && driveId[1]) {
+                rawUrl = `https://lh3.googleusercontent.com/d/${driveId[1]}=s400`;
+              }
+            }
+
+            const imgUrl = (rawUrl.length > 5) ? rawUrl : placeholderImg;
             const prodJSON = JSON.stringify(p).replace(/'/g, "&apos;");
 
             htmlCat += `
               <div class="card-prod">
-                <img src="${imgUrl}" alt="${p.articulo}">
+                <img src="${imgUrl}" alt="${p.articulo}" onerror="this.onerror=null; this.src='${placeholderImg}';">
                 <div class="card-info">
                   <h4>${p.articulo}</h4>
                   <small>${p.capacidad || ''}</small>
@@ -735,6 +749,10 @@
         return;
       }
 
+      const btnConfirmar = document.querySelector('.btn-confirmar');
+      btnConfirmar.disabled = true;
+      btnConfirmar.innerText = "Verificando disponibilidad...";
+
       const codigoCompra = generarCodigoUnico();
       const total = parseFloat(document.getElementById('totalPrecio').innerText);
 
@@ -743,30 +761,8 @@
         listaItems.push({ articulo: productoEnvioGlobal.articulo || 'Envío a Asiento', cantidad: 1, precio: productoEnvioGlobal.precio });
       }
 
-      const pedidoPayload = {
-        codigo_compra: codigoCompra,
-        cliente_nombre: `${nombre} ${apellido}`,
-        sector: tipoEntrega === 'envio' ? sector : 'Retiro en Buffet',
-        asiento: tipoEntrega === 'envio' ? asiento : 'N/A',
-        observaciones: observaciones || '',
-        items: listaItems,
-        total: total,
-        estado: 'Pendiente'
-      };
-
-      // 1. Guardar en memoria local
-      guardarDatosClienteLocal(nombre, apellido, sector, asiento);
-      guardarPedidoEnHistorial(codigoCompra, total, listaItems);
-
-      // 2. Guardar pedido en Supabase
-      const { error } = await clientSupabase.from('pedidos').insert([pedidoPayload]);
-      if (error) {
-        alert("Error al registrar el pedido: " + error.message);
-        return;
-      }
-
       try {
-        // 3. Generar la preferencia en Mercado Pago
+        // 1. Invocar la Edge Function para validar stock y generar preferencia
         const { data, error: funcError } = await clientSupabase.functions.invoke('crear-preferencia', {
           body: { 
             items: listaItems, 
@@ -775,15 +771,48 @@
           }
         });
 
-        if (funcError || !data?.init_point) {
-          throw new Error(funcError?.message || "No se pudo generar el link de pago.");
+        if (funcError || !data) {
+          throw new Error(funcError?.message || "No se pudo procesar la solicitud.");
         }
 
-        // 4. Redirigir al cliente a pagar
+        // Manejar si el servidor devolvió rechazo por falta de stock
+        if (data.error === 'STOCK_INSUFICIENTE') {
+          const detallesStr = data.detalles.join('\n• ');
+          alert(`⚠ ¡Lo sentimos! Algunos productos se agotaron mientras realizabas tu compra:\n\n• ${detallesStr}\n\nActualizaremos el menú para que puedas ajustar tu pedido.`);
+          cargarMenu();
+          return;
+        }
+
+        if (!data.init_point) {
+          throw new Error("No se pudo obtener el enlace de pago de Mercado Pago.");
+        }
+
+        // 2. Guardar en almacenamiento local
+        guardarDatosClienteLocal(nombre, apellido, sector, asiento);
+        guardarPedidoEnHistorial(codigoCompra, total, listaItems);
+
+        // 3. Guardar el pedido en Supabase
+        const pedidoPayload = {
+          codigo_compra: codigoCompra,
+          cliente_nombre: `${nombre} ${apellido}`,
+          sector: tipoEntrega === 'envio' ? sector : 'Retiro en Buffet',
+          asiento: tipoEntrega === 'envio' ? asiento : 'N/A',
+          observaciones: observaciones || '',
+          items: listaItems,
+          total: total,
+          estado: 'Pendiente'
+        };
+
+        await clientSupabase.from('pedidos').insert([pedidoPayload]);
+
+        // 4. Redirigir a la pasarela de Mercado Pago
         window.location.href = data.init_point;
 
       } catch (err) {
-        alert("Hubo un error al procesar el pago con Mercado Pago: " + err.message);
+        alert("Hubo un error al procesar el pedido: " + err.message);
+      } finally {
+        btnConfirmar.disabled = false;
+        btnConfirmar.innerText = "Pagar con Mercado Pago 💳";
       }
     }
 
