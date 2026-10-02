@@ -8,29 +8,47 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
-    body { background-color: #f4f6f9; color: #333; padding-bottom: 80px; }
+    body { background-color: #f4f6f9; color: #333; padding-bottom: 90px; }
     
-    header { background: #004481; color: white; text-align: center; padding: 25px 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); position: relative; }
-    header h1 { font-size: 2rem; margin-bottom: 5px; letter-spacing: 1px; }
-    header p { font-size: 0.95rem; opacity: 0.9; }
+    /* Verde Atenas de Córdoba */
+    header { 
+      background: #008751; 
+      color: white; 
+      text-align: center; 
+      padding: 20px 15px; 
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15); 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    @media (min-width: 600px) {
+      header {
+        flex-direction: row;
+        justify-content: space-between;
+        padding: 20px 30px;
+        text-align: left;
+      }
+    }
+
+    header h1 { font-size: 1.8rem; margin-bottom: 2px; letter-spacing: 1px; }
+    header p { font-size: 0.9rem; opacity: 0.95; }
 
     /* Botón Header para Ver Historial */
     .btn-historial {
-      position: absolute;
-      top: 15px;
-      right: 15px;
       background: #ff6b00;
       color: white;
       border: none;
-      padding: 8px 14px;
+      padding: 8px 16px;
       border-radius: 20px;
       font-weight: bold;
       font-size: 0.85rem;
       cursor: pointer;
       box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      transition: background 0.2s;
+      transition: background 0.2s, transform 0.1s;
+      white-space: nowrap;
     }
-    .btn-historial:hover { background: #e05e00; }
+    .btn-historial:hover { background: #e05e00; transform: scale(1.03); }
 
     .container { max-width: 1100px; margin: 20px auto; padding: 0 15px; display: grid; grid-template-columns: 1fr; gap: 20px; }
     @media (min-width: 850px) {
@@ -39,33 +57,66 @@
 
     /* Estilos del Menú / Catálogo */
     .seccion-cat { background: white; border-radius: 10px; padding: 20px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .titulo-cat { color: #004481; border-bottom: 2px solid #004481; padding-bottom: 8px; font-size: 1.4rem; text-transform: uppercase; }
+    .titulo-cat { color: #008751; border-bottom: 2px solid #008751; padding-bottom: 8px; font-size: 1.4rem; text-transform: uppercase; }
     .titulo-subcat { color: #555; margin: 18px 0 10px 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; }
-    .titulo-subcat::before { content: "•"; color: #007bff; font-size: 1.5rem; }
+    .titulo-subcat::before { content: "•"; color: #00a86b; font-size: 1.5rem; }
 
-    .grid-productos { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; }
+    .grid-productos { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+    @media (min-width: 480px) {
+      .grid-productos { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+    }
+
     .card-prod { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, box-shadow 0.2s; }
     .card-prod:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-    .card-prod img { width: 100%; height: 130px; object-fit: cover; background-color: #eee; }
-    .card-info { padding: 12px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
-    .card-info h4 { font-size: 1rem; color: #222; margin-bottom: 4px; }
-    .card-info small { color: #777; font-size: 0.85rem; }
-    .precio { font-weight: bold; color: #28a745; font-size: 1.1rem; margin: 8px 0; }
+    .card-prod img { width: 100%; height: 120px; object-fit: cover; background-color: #eee; }
+    .card-info { padding: 10px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+    .card-info h4 { font-size: 0.95rem; color: #222; margin-bottom: 4px; }
+    .card-info small { color: #777; font-size: 0.8rem; }
+    .precio { font-weight: bold; color: #008751; font-size: 1.1rem; margin: 6px 0; }
 
-    .btn-add { background: #007bff; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; transition: background 0.2s; }
-    .btn-add:hover { background: #0056b3; }
+    .btn-add { background: #008751; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; transition: background 0.2s; }
+    .btn-add:hover { background: #006b3f; }
 
     /* Estilos del Carrito */
     .carrito-box { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: sticky; top: 20px; height: fit-content; }
-    .carrito-box h3 { border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-bottom: 15px; color: #004481; display: flex; justify-content: space-between; align-items: center; }
+    .carrito-box h3 { border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-bottom: 15px; color: #008751; display: flex; justify-content: space-between; align-items: center; }
     .item-carrito { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.95rem; border-bottom: 1px dashed #eee; padding-bottom: 8px; }
     .item-controles { display: flex; align-items: center; gap: 8px; }
-    .btn-cant { background: #e0e0e0; border: none; width: 24px; height: 24px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+    .btn-cant { background: #e0e0e0; border: none; width: 26px; height: 26px; border-radius: 4px; font-weight: bold; cursor: pointer; }
     .btn-cant:hover { background: #ccc; }
+
+    /* Barra Flotante de Carrito en Móviles */
+    .carrito-bar-flotante {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #008751;
+      color: white;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 -4px 12px rgba(0,0,0,0.2);
+      z-index: 999;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .carrito-bar-flotante .badge-cant {
+      background: #ff6b00;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      margin-left: 6px;
+    }
+    @media (min-width: 850px) {
+      .carrito-bar-flotante { display: none; }
+    }
 
     /* Selección Modalidad de Entrega */
     .seccion-modo-entrega { margin-top: 15px; padding-top: 15px; border-top: 2px solid #f4f6f9; }
-    .titulo-modo { font-size: 0.9rem; font-weight: bold; color: #004481; margin-bottom: 10px; }
+    .titulo-modo { font-size: 0.9rem; font-weight: bold; color: #008751; margin-bottom: 10px; }
     .grid-modos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
     .opcion-modo {
       border: 2px solid #ccc;
@@ -81,10 +132,10 @@
     }
     .opcion-modo input { display: none; }
     .opcion-modo.activa {
-      border-color: #28a745;
+      border-color: #008751;
       background: #e6f4ea;
-      color: #1e7e34;
-      box-shadow: 0 2px 6px rgba(40,167,69,0.15);
+      color: #006b3f;
+      box-shadow: 0 2px 6px rgba(0,135,81,0.15);
     }
 
     .form-cliente { margin-top: 10px; }
@@ -94,7 +145,7 @@
     .form-group textarea { resize: vertical; height: 50px; }
 
     .btn-mapa-estadio {
-      background: #004481;
+      background: #008751;
       color: white;
       border: none;
       padding: 8px 12px;
@@ -105,7 +156,7 @@
       cursor: pointer;
       margin-bottom: 12px;
     }
-    .btn-mapa-estadio:hover { background: #002e58; }
+    .btn-mapa-estadio:hover { background: #006b3f; }
 
     .total-box { font-size: 1.2rem; font-weight: bold; text-align: right; margin: 10px 0 15px 0; color: #333; }
     .btn-confirmar { background: #28a745; color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-size: 1rem; font-weight: bold; cursor: pointer; transition: background 0.2s; }
@@ -114,7 +165,7 @@
     /* Modales Generales */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; }
     .modal-content { background: white; padding: 25px; border-radius: 12px; text-align: center; max-width: 450px; width: 90%; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
-    .btn-cerrar-modal { background: #004481; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 15px; }
+    .btn-cerrar-modal { background: #008751; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 15px; }
 
     /* Estilos Historial de Pedidos */
     .item-historial {
@@ -129,7 +180,7 @@
       display: flex;
       justify-content: space-between;
       font-weight: bold;
-      color: #004481;
+      color: #008751;
       margin-bottom: 5px;
     }
     .item-historial-detalles { font-size: 0.85rem; color: #555; }
@@ -205,8 +256,10 @@
 <body>
 
   <header>
-    <h1>Buffet "La Griega"</h1>
-    <p>¡Pide desde tu lugar en el estadio!</p>
+    <div>
+      <h1>Buffet "La Griega"</h1>
+      <p>¡Pide desde tu lugar en el estadio!</p>
+    </div>
     <button class="btn-historial" onclick="abrirModalHistorial()">📋 Mis Pedidos</button>
   </header>
 
@@ -217,7 +270,7 @@
     </main>
 
     <!-- SECCIÓN DERECHA: CARRITO Y CHECKOUT -->
-    <aside class="carrito-box">
+    <aside class="carrito-box" id="seccionCarrito">
       <h3>Mi Pedido 🛒</h3>
       
       <div id="itemsCarrito">
@@ -249,7 +302,6 @@
           <label>Apellido:</label>
           <input type="text" id="cli_apellido" placeholder="Ej: Pérez">
         </div>
-        <!-- NUEVO CAMPO: Teléfono / WhatsApp -->
         <div class="form-group">
           <label>WhatsApp / Teléfono:</label>
           <input type="tel" id="cli_telefono" placeholder="Ej: 3511234567">
@@ -269,7 +321,7 @@
           </div>
           <div class="form-group">
             <label>Observaciones (Opcional):</label>
-            <textarea id="cli_observaciones" placeholder="Ej: Llevo remera azul"></textarea>
+            <textarea id="cli_observaciones" placeholder="Ej: Llevo remera verde"></textarea>
           </div>
         </div>
       </div>
@@ -280,6 +332,17 @@
 
       <button class="btn-confirmar" onclick="confirmarPedido()">Pagar con Mercado Pago 💳</button>
     </aside>
+  </div>
+
+  <!-- BARRA FLOTANTE DE CARRITO (MÓVILES) -->
+  <div class="carrito-bar-flotante" onclick="scrollearAlCarrito()">
+    <div>
+      <span>🛒 Ver Mi Pedido</span>
+      <span class="badge-cant" id="badgeCantidadProds">0</span>
+    </div>
+    <div>
+      $<span id="totalFlotante">0.00</span> ➔
+    </div>
   </div>
 
   <!-- MODAL HISTORIAL LOCAL DE PEDIDOS -->
@@ -308,7 +371,7 @@
           <svg viewBox="0 0 600 600">
             <!-- Cancha -->
             <g id="cancha">
-              <rect x="200" y="150" width="200" height="300" fill="#ff6b00" stroke="#ffffff" stroke-width="3"/>
+              <rect x="200" y="150" width="200" height="300" fill="#008751" stroke="#ffffff" stroke-width="3"/>
               <line x1="200" y1="300" x2="400" y2="300" stroke="#ffffff" stroke-width="2"/>
               <circle cx="300" cy="300" r="35" fill="none" stroke="#ffffff" stroke-width="2"/>
               <path d="M 260 150 A 40 40 0 0 1 340 150 Z" fill="none" stroke="#ffffff" stroke-width="2"/>
@@ -372,9 +435,8 @@
 
     let carrito = [];
     let productoEnvioGlobal = null; 
-    let tipoEntrega = 'retiro'; // 'retiro' o 'envio'
+    let tipoEntrega = 'retiro';
 
-    // CONVERTIDOR DE ENLACES DE GOOGLE DRIVE A URL DIRECTA
     function convertirUrlDrive(url) {
       if (!url || url.trim() === '') {
         return 'https://via.placeholder.com/200x130?text=La+Griega';
@@ -386,7 +448,6 @@
       return url;
     }
 
-    // DATA DINÁMICA DEL ESTADIO
     const data = {
       "norte":{"nombre":"Sector Norte","direccion":"RTL","filas":[{"nombre":"F6","asientos":40},{"nombre":"F5","asientos":35},{"nombre":"F4","asientos":35},{"nombre":"F3","asientos":34},{"nombre":"F2","asientos":33},{"nombre":"F1","asientos":33}]},
       "noroeste":{"nombre":"Sector Noroeste","direccion":"RTL","filas":[{"nombre":"F6","asientos":16},{"nombre":"F5","asientos":15},{"nombre":"F4","asientos":9},{"nombre":"F3","asientos":8},{"nombre":"F2","asientos":6},{"nombre":"F1","asientos":4}]},
@@ -399,7 +460,6 @@
     let activeSeatBtn = null;
     let ultimaUbicacion = { sector: '', filaAsiento: '' };
 
-    // --- MANEJO DE HISTORIAL LOCAL Y AUTOCOMPLETADO (localStorage) ---
     function cargarDatosAutocompletados() {
       const datosGuardados = JSON.parse(localStorage.getItem('cliente_la_griega'));
       if (datosGuardados) {
@@ -462,7 +522,6 @@
       document.getElementById('modalHistorial').style.display = 'none';
     }
 
-    // --- CARGAR MENÚ Y LÓGICA DE PRODUCTOS ---
     async function cargarMenu() {
       const contenedor = document.getElementById('contenedorMenu');
       const { data: productos, error } = await clientSupabase
@@ -536,7 +595,6 @@
       }
     }
 
-    // SELECCIÓN DE MODO DE ENTREGA
     function seleccionarModoEntrega(modo) {
       tipoEntrega = modo;
       const lblRetiro = document.getElementById('lblRetiro');
@@ -559,7 +617,6 @@
       renderizarCarrito();
     }
 
-    /* MODAL DE ASIENTOS DE ESTADIO */
     function abrirModalEstadio() {
       document.getElementById('modalEstadio').style.display = 'flex';
     }
@@ -672,10 +729,17 @@
     function renderizarCarrito() {
       const contenedorItems = document.getElementById('itemsCarrito');
       const totalSpan = document.getElementById('totalPrecio');
+      const totalFlotante = document.getElementById('totalFlotante');
+      const badgeCantidad = document.getElementById('badgeCantidadProds');
+
+      let cantidadTotal = 0;
+      carrito.forEach(i => cantidadTotal += i.cantidad);
+      badgeCantidad.innerText = cantidadTotal;
 
       if (carrito.length === 0 && tipoEntrega === 'retiro') {
         contenedorItems.innerHTML = `<p style="color: #777; text-align: center; margin: 20px 0;">El carrito está vacío</p>`;
         totalSpan.innerText = "0.00";
+        totalFlotante.innerText = "0.00";
         return;
       }
 
@@ -704,7 +768,7 @@
       if (tipoEntrega === 'envio' && productoEnvioGlobal) {
         total += parseFloat(productoEnvioGlobal.precio);
         contenedorItems.innerHTML += `
-          <div class="item-carrito" style="color: #1e7e34; font-weight: bold;">
+          <div class="item-carrito" style="color: #006b3f; font-weight: bold;">
             <div>
               <span>🛵 ${productoEnvioGlobal.articulo || 'Envío a asiento'}</span>
             </div>
@@ -715,7 +779,13 @@
         `;
       }
 
-      totalSpan.innerText = total.toFixed(2);
+      const totalFormateado = total.toFixed(2);
+      totalSpan.innerText = totalFormateado;
+      totalFlotante.innerText = totalFormateado;
+    }
+
+    function scrollearAlCarrito() {
+      document.getElementById('seccionCarrito').scrollIntoView({ behavior: 'smooth' });
     }
 
     function generarCodigoUnico() {
@@ -727,7 +797,6 @@
       return codigo;
     }
 
-    // Confirmar Pedido e Invocar Mercado Pago
     async function confirmarPedido() {
       if (carrito.length === 0) {
         alert("Agrega al menos un producto al carrito antes de comprar.");
@@ -776,11 +845,9 @@
         estado: 'Pendiente'
       };
 
-      // 1. Guardar datos locales
       guardarDatosClienteLocal(nombre, apellido, telefono, sector, asiento);
       guardarPedidoEnHistorial(codigoCompra, total, listaItems);
 
-      // 2. Guardar pedido en Supabase
       const { error } = await clientSupabase.from('pedidos').insert([pedidoPayload]);
       if (error) {
         alert("Error al registrar el pedido: " + error.message);
@@ -788,7 +855,6 @@
       }
 
       try {
-        // 3. Generar la preferencia en Mercado Pago
         const { data, error: funcError } = await clientSupabase.functions.invoke('crear-preferencia', {
           body: { 
             items: listaItems, 
@@ -801,7 +867,6 @@
           throw new Error(funcError?.message || "No se pudo generar el link de pago.");
         }
 
-        // 4. Redirigir al cliente a pagar
         window.location.href = data.init_point;
 
       } catch (err) {
@@ -809,7 +874,6 @@
       }
     }
 
-    // Inicialización
     cargarMenu();
     cargarDatosAutocompletados();
   </script>
