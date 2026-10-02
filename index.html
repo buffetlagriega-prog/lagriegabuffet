@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buffet La Griega - Estadio</title>
+  <!-- CDN de Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+    body { background-color: #f4f6f9; color: #333; padding-bottom: 80px; }
+    
+    header { background: #004481; color: white; text-align: center; padding: 25px 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); position: relative; }
+    header h1 { font-size: 2rem; margin-bottom: 5px; letter-spacing: 1px; }
+    header p { font-size: 0.95rem; opacity: 0.9; }
+
+    /* Botón Header para Ver Historial */
+    .btn-historial {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: #ff6b00;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 0.85rem;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      transition: background 0.2s;
+    }
+    .btn-historial:hover { background: #e05e00; }
+
+    .container { max-width: 1100px; margin: 20px auto; padding: 0 15px; display: grid; grid-template-columns: 1fr; gap: 20px; }
+    @media (min-width: 850px) {
+      .container { grid-template-columns: 2.5fr 1.2fr; }
+    }
+
+    /* Estilos del Menú / Catálogo */
+    .seccion-cat { background: white; border-radius: 10px; padding: 20px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .titulo-cat { color: #004481; border-bottom: 2px solid #004481; padding-bottom: 8px; font-size: 1.4rem; text-transform: uppercase; }
+    .titulo-subcat { color: #555; margin: 18px 0 10px 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; }
+    .titulo-subcat::before { content: "•"; color: #007bff; font-size: 1.5rem; }
+
+    .grid-productos { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; }
+    .card-prod { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, box-shadow 0.2s; }
+    .card-prod:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .card-prod img { width: 100%; height: 130px; object-fit: cover; background-color: #eee; }
+    .card-info { padding: 12px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+    .card-info h4 { font-size: 1rem; color: #222; margin-bottom: 4px; }
+    .card-info small { color: #777; font-size: 0.85rem; }
+    .precio { font-weight: bold; color: #28a745; font-size: 1.1rem; margin: 8px 0; }
+
+    .btn-add { background: #007bff; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; transition: background 0.2s; }
+    .btn-add:hover { background: #0056b3; }
+
+    /* Estilos del Carrito */
+    .carrito-box { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: sticky; top: 20px; height: fit-content; }
+    .carrito-box h3 { border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-bottom: 15px; color: #004481; display: flex; justify-content: space-between; align-items: center; }
+    .item-carrito { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.95rem; border-bottom: 1px dashed #eee; padding-bottom: 8px; }
+    .item-controles { display: flex; align-items: center; gap: 8px; }
+    .btn-cant { background: #e0e0e0; border: none; width: 24px; height: 24px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+    .btn-cant:hover { background: #ccc; }
+
+    /* Selección Modalidad de Entrega (OBLIGATORIA) */
+    .seccion-modo-entrega { margin-top: 15px; padding-top: 15px; border-top: 2px solid #f4f6f9; }
+    .titulo-modo { font-size: 0.9rem; font-weight: bold; color: #004481; margin-bottom: 10px; }
+    .grid-modos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+    .opcion-modo {
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      padding: 10px 5px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #555;
+      background: #fafafa;
+      transition: all 0.2s ease;
+    }
+    .opcion-modo input { display: none; }
+    .opcion-modo.activa {
+      border-color: #28a745;
+      background: #e6f4ea;
+      color: #1e7e34;
+      box-shadow: 0 2px 6px rgba(40,167,69,0.15);
+    }
+
+    .form-cliente { margin-top: 10px; }
+    .form-group { margin-bottom: 10px; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 4px; color: #555; }
+    .form-group input, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.9rem; }
+    .form-group textarea { resize: vertical; height: 50px; }
+
+    .btn-mapa-estadio {
+      background: #004481;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      width: 100%;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+    .btn-mapa-estadio:hover { background: #002e58; }
+
+    .total-box { font-size: 1.2rem; font-weight: bold; text-align: right; margin: 10px 0 15px 0; color: #333; }
+    .btn-confirmar { background: #28a745; color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-size: 1rem; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+    .btn-confirmar:hover { background: #218838; }
+
+    /* Modales Generales */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: white; padding: 25px; border-radius: 12px; text-align: center; max-width: 450px; width: 90%; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+    .btn-cerrar-modal { background: #004481; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 15px; }
+
+    /* Estilos Historial de Pedidos */
+    .item-historial {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      text-align: left;
+    }
+    .item-historial-header {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+      color: #004481;
+      margin-bottom: 5px;
+    }
+    .item-historial-detalles { font-size: 0.85rem; color: #555; }
+
+    /* MODAL INTEGRADO DEL VISOR DE ESTADIO */
+    #modalEstadio .modal-content-estadio {
+      background: #0f172a;
+      color: #f8fafc;
+      width: 95%;
+      max-width: 1050px;
+      height: 90vh;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .estadio-header {
+      background: #020617;
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #334155;
+    }
+    .estadio-header h2 { font-size: 1.2rem; color: #ff6b00; }
+    .btn-close-map { background: #ef4444; color: white; border: none; padding: 6px 14px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+    
+    .estadio-layout { display: flex; flex: 1; overflow: hidden; flex-direction: column; }
+    @media (min-width: 768px) {
+      .estadio-layout { flex-direction: row; }
+    }
+    .stadium-view { flex: 1; padding: 20px; display: flex; justify-content: center; align-items: center; background: radial-gradient(circle at center, #111827 0%, #030712 100%); }
+    .stadium-view svg { width: 100%; height: 100%; max-width: 550px; max-height: 550px; }
+    
+    .sector-shape { cursor: pointer; fill: #1e293b; stroke: #000; stroke-width: 2px; transition: all 0.2s; }
+    .sector-shape:hover { fill: #334155; stroke: #fff; filter: brightness(1.2); }
+    .sector-shape.active { stroke: #38bdf8; stroke-width: 4px; fill: #1e3a8a; }
+    .sector-label { font-size: 12px; font-weight: bold; fill: #fff; pointer-events: none; text-anchor: middle; dominant-baseline: middle; }
+    
+    .seats-panel { width: 100%; max-height: 350px; background: #1e293b; border-top: 1px solid #334155; padding: 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+    @media (min-width: 768px) {
+      .seats-panel { width: 420px; max-height: none; border-top: none; border-left: 1px solid #334155; }
+    }
+    
+    .rows-container { display: flex; flex-direction: column; gap: 12px; }
+    .row-block { background: #0f172a; padding: 10px; border-radius: 8px; border: 1px solid #334155; }
+    .row-title { font-size: 0.85rem; font-weight: bold; color: #facc15; margin-bottom: 8px; }
+    .seats-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    
+    .btn-seat {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid #15803d;
+      background-color: #22c55e;
+      color: #000;
+      font-weight: bold;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-seat:hover { transform: scale(1.1); filter: brightness(1.2); }
+    .btn-seat.selected { background-color: #2563eb; color: #fff; border-color: #60a5fa; box-shadow: 0 0 8px #2563eb; }
+
+    .selection-info { background: #020617; border: 1px solid #334155; padding: 12px; border-radius: 8px; margin-top: auto; }
+    .btn-confirm-seat { background: #28a745; color: white; border: none; padding: 10px; border-radius: 6px; width: 100%; font-weight: bold; margin-top: 10px; cursor: pointer; }
+    .btn-confirm-seat:disabled { background: #475569; cursor: not-allowed; opacity: 0.6; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Buffet "La Griega"</h1>
+    <p>¡Pide desde tu lugar en el estadio!</p>
+    <button class="btn-historial" onclick="abrirModalHistorial()">📋 Mis Pedidos</button>
+  </header>
+
+  <div class="container">
+    <!-- SECCIÓN IZQUIERDA: CATÁLOGO DINÁMICO -->
+    <main id="contenedorMenu">
+      <p style="text-align: center; font-weight: bold; padding: 20px;">Cargando productos...</p>
+    </main>
+
+    <!-- SECCIÓN DERECHA: CARRITO Y CHECKOUT -->
+    <aside class="carrito-box">
+      <h3>Mi Pedido 🛒</h3>
+      
+      <div id="itemsCarrito">
+        <p style="color: #777; text-align: center; margin: 20px 0;">El carrito está vacío</p>
+      </div>
+
+      <!-- SELECCIÓN OBLIGATORIA: MODO DE ENTREGA -->
+      <div class="seccion-modo-entrega">
+        <div class="titulo-modo">¿Cómo deseas recibir tu pedido?</div>
+        <div class="grid-modos">
+          <label id="lblRetiro" class="opcion-modo activa" onclick="seleccionarModoEntrega('retiro')">
+            <input type="radio" name="modo_entrega" value="retiro" checked>
+            🏃 Retiro en Buffet
+          </label>
+          <label id="lblEnvio" class="opcion-modo" onclick="seleccionarModoEntrega('envio')">
+            <input type="radio" name="modo_entrega" value="envio">
+            🛵 Envío a Asiento<br><small id="lblSubEnvio">(+$0)</small>
+          </label>
+        </div>
+      </div>
+
+      <!-- Datos del cliente -->
+      <div class="form-cliente">
+        <div class="form-group">
+          <label>Nombre:</label>
+          <input type="text" id="cli_nombre" placeholder="Ej: Juan">
+        </div>
+        <div class="form-group">
+          <label>Apellido:</label>
+          <input type="text" id="cli_apellido" placeholder="Ej: Pérez">
+        </div>
+
+        <!-- Campos adicionales si selecciona Envío a Asiento -->
+        <div id="seccionEstadio" style="display: none;">
+          <button type="button" class="btn-mapa-estadio" onclick="abrirModalEstadio()">🗺 Seleccionar Asiento en el Mapa</button>
+          
+          <div class="form-group">
+            <label>Sector / Tribuna:</label>
+            <input type="text" id="cli_sector" placeholder="Ej: Sector Norte">
+          </div>
+          <div class="form-group">
+            <label>Fila / Asiento:</label>
+            <input type="text" id="cli_asiento" placeholder="Ej: Fila F1 | Asiento #11">
+          </div>
+          <div class="form-group">
+            <label>Observaciones (Opcional):</label>
+            <textarea id="cli_observaciones" placeholder="Ej: Llevo remera azul"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="total-box">
+        Total: $<span id="totalPrecio">0.00</span>
+      </div>
+
+      <button class="btn-confirmar" onclick="confirmarPedido()">Pagar con Mercado Pago 💳</button>
+    </aside>
+  </div>
+
+  <!-- MODAL HISTORIAL LOCAL DE PEDIDOS -->
+  <div id="modalHistorial" class="modal-overlay">
+    <div class="modal-content" style="max-width: 500px;">
+      <h2>📋 Mis Pedidos Recientes</h2>
+      <p style="margin-top: 5px; color: #666; font-size: 0.85rem;">Códigos guardados en este dispositivo:</p>
+      
+      <div id="listaHistorial" style="max-height: 300px; overflow-y: auto; margin: 15px 0;">
+        <p style="color: #777;">No tienes pedidos registrados en este teléfono.</p>
+      </div>
+
+      <button class="btn-cerrar-modal" onclick="cerrarModalHistorial()">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- MODAL INTEGRADO: VISOR DE ASIENTOS DE ESTADIO -->
+  <div id="modalEstadio" class="modal-overlay">
+    <div class="modal-content-estadio">
+      <div class="estadio-header">
+        <h2>🏀 Mapa Interactivo de Asientos del Estadio</h2>
+        <button class="btn-close-map" onclick="cerrarModalEstadio()">✕ Cerrar</button>
+      </div>
+      <div class="estadio-layout">
+        <div class="stadium-view">
+          <svg viewBox="0 0 600 600">
+            <!-- Cancha -->
+            <g id="cancha">
+              <rect x="200" y="150" width="200" height="300" fill="#ff6b00" stroke="#ffffff" stroke-width="3"/>
+              <line x1="200" y1="300" x2="400" y2="300" stroke="#ffffff" stroke-width="2"/>
+              <circle cx="300" cy="300" r="35" fill="none" stroke="#ffffff" stroke-width="2"/>
+              <path d="M 260 150 A 40 40 0 0 1 340 150 Z" fill="none" stroke="#ffffff" stroke-width="2"/>
+              <line x1="280" y1="165" x2="320" y2="165" stroke="#ffffff" stroke-width="3"/>
+              <path d="M 260 450 A 40 40 0 0 0 340 450 Z" fill="none" stroke="#ffffff" stroke-width="2"/>
+              <line x1="280" y1="435" x2="320" y2="435" stroke="#ffffff" stroke-width="3"/>
+            </g>
+            <!-- Tribunas / Sectores -->
+            <g onclick="loadSector('norte')">
+              <rect id="sec-norte" class="sector-shape" x="200" y="40" width="310" height="90"/>
+              <text x="355" y="85" class="sector-label">SECTOR NORTE</text>
+            </g>
+            <g onclick="loadSector('noroeste')">
+              <polygon id="sec-noroeste" class="sector-shape" points="90,130 200,40 200,130 90,130"/>
+              <text x="155" y="85" class="sector-label" transform="rotate(-38 155 85)">NOROESTE</text>
+            </g>
+            <g onclick="loadSector('oeste_visitante')">
+              <rect id="sec-oeste_visitante" class="sector-shape" x="90" y="130" width="90" height="160"/>
+              <text x="135" y="210" class="sector-label">OESTE (VISITANTE)</text>
+            </g>
+            <g onclick="loadSector('oeste_local')">
+              <rect id="sec-oeste_local" class="sector-shape" x="90" y="300" width="90" height="150"/>
+              <text x="135" y="375" class="sector-label">OESTE (LOCAL)</text>
+            </g>
+            <g onclick="loadSector('sur')">
+              <rect id="sec-sur" class="sector-shape" x="90" y="470" width="420" height="90"/>
+              <text x="300" y="515" class="sector-label">SECTOR SUR</text>
+            </g>
+            <g onclick="loadSector('este')">
+              <rect id="sec-este" class="sector-shape" x="420" y="300" width="90" height="150"/>
+              <text x="465" y="375" class="sector-label">SECTOR ESTE</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="seats-panel">
+          <div>
+            <h2 id="sector-title" style="font-size:1.2rem; color:#38bdf8;">Selecciona una Tribuna</h2>
+            <p id="sector-subtitle" style="font-size:0.85rem; color:#94a3b8; margin-top:4px;">Haz clic en cualquier sector de la cancha para ver sus asientos</p>
+          </div>
+
+          <div id="panel-content" style="flex:1;">
+            <p style="color: #94a3b8; text-align: center; margin-top: 40px; font-style: italic;">👈 Haz clic en una tribuna del mapa para desplegar los asientos.</p>
+          </div>
+
+          <div class="selection-info">
+            <strong style="color:#ff6b00; font-size:0.9rem;">Asiento Seleccionado:</strong>
+            <p id="selected-seat-desc" style="font-size:0.85rem; color:#cbd5e1; margin-top:4px;">Ninguno</p>
+            <button id="btnConfirmarAsiento" class="btn-confirm-seat" disabled onclick="confirmarSeleccionDesdeIndicador()">Confirmar Asiento Seleccionado</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://djruqcsjzmefibpkrqme.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqcnVxY3Nqem1lZmlicGtycW1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3NDkzODcsImV4cCI6MjEwNjMyNTM4N30.E76j35xX1HJHOCaehnGDhZKvgWwAruB4Ho8bAsUQ-SA";
+    
+    const clientSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let carrito = [];
+    let productoEnvioGlobal = null; 
+    let tipoEntrega = 'retiro'; // 'retiro' o 'envio'
+
+    // DATA DINÁMICA DEL ESTADIO
+    const data = {
+      "norte":{"nombre":"Sector Norte","direccion":"RTL","filas":[{"nombre":"F6","asientos":40},{"nombre":"F5","asientos":35},{"nombre":"F4","asientos":35},{"nombre":"F3","asientos":34},{"nombre":"F2","asientos":33},{"nombre":"F1","asientos":33}]},
+      "noroeste":{"nombre":"Sector Noroeste","direccion":"RTL","filas":[{"nombre":"F6","asientos":16},{"nombre":"F5","asientos":15},{"nombre":"F4","asientos":9},{"nombre":"F3","asientos":8},{"nombre":"F2","asientos":6},{"nombre":"F1","asientos":4}]},
+      "oeste_visitante":{"nombre":"Oeste (Visitante)","direccion":"LTR","filas":[{"nombre":"F4","asientos":15},{"nombre":"F3","asientos":15},{"nombre":"F2","asientos":15},{"nombre":"F1","asientos":15}]},
+      "oeste_local":{"nombre":"Oeste (Local)","direccion":"LTR","filas":[{"nombre":"F4","asientos":15},{"nombre":"F3","asientos":15},{"nombre":"F2","asientos":15},{"nombre":"F1","asientos":15}]},
+      "sur":{"nombre":"Sector Sur","direccion":"LTR","filas":[{"nombre":"F4","asientos":22},{"nombre":"F3","asientos":22},{"nombre":"F2","asientos":22},{"nombre":"F1","asientos":22}]},
+      "este":{"nombre":"Sector Este","direccion":"LTR","filas":[{"nombre":"F4","asientos":12},{"nombre":"F3","asientos":12},{"nombre":"F2","asientos":12},{"nombre":"F1","asientos":12}]}
+    };
+
+    let activeSeatBtn = null;
+    let ultimaUbicacion = { sector: '', filaAsiento: '' };
+
+    // --- MANEJO DE HISTORIAL LOCAL Y AUTOCOMPLETADO (localStorage) ---
+    function cargarDatosAutocompletados() {
+      const datosGuardados = JSON.parse(localStorage.getItem('cliente_la_griega'));
+      if (datosGuardados) {
+        if (datosGuardados.nombre) document.getElementById('cli_nombre').value = datosGuardados.nombre;
+        if (datosGuardados.apellido) document.getElementById('cli_apellido').value = datosGuardados.apellido;
+        if (datosGuardados.sector) document.getElementById('cli_sector').value = datosGuardados.sector;
+        if (datosGuardados.asiento) document.getElementById('cli_asiento').value = datosGuardados.asiento;
+      }
+    }
+
+    function guardarDatosClienteLocal(nombre, apellido, sector, asiento) {
+      const clienteInfo = { nombre, apellido, sector, asiento };
+      localStorage.setItem('cliente_la_griega', JSON.stringify(clienteInfo));
+    }
+
+    function guardarPedidoEnHistorial(codigo, total, items) {
+      const historial = JSON.parse(localStorage.getItem('pedidos_la_griega')) || [];
+      const fechaHora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' - ' + new Date().toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+      
+      historial.unshift({
+        codigo: codigo,
+        fecha: fechaHora,
+        total: total,
+        items: items
+      });
+
+      localStorage.setItem('pedidos_la_griega', JSON.stringify(historial.slice(0, 10)));
+    }
+
+    function abrirModalHistorial() {
+      const contenedor = document.getElementById('listaHistorial');
+      const historial = JSON.parse(localStorage.getItem('pedidos_la_griega')) || [];
+
+      if (historial.length === 0) {
+        contenedor.innerHTML = `<p style="color: #777;">No tienes pedidos registrados en este teléfono.</p>`;
+      } else {
+        contenedor.innerHTML = "";
+        historial.forEach(p => {
+          let listaProdsStr = p.items.map(i => `${i.cantidad}x ${i.articulo}`).join(', ');
+          contenedor.innerHTML += `
+            <div class="item-historial">
+              <div class="item-historial-header">
+                <span>Código: ${p.codigo}</span>
+                <span>$${parseFloat(p.total).toFixed(2)}</span>
+              </div>
+              <div class="item-historial-detalles">
+                <div>📅 ${p.fecha}</div>
+                <div>🛒 ${listaProdsStr}</div>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      document.getElementById('modalHistorial').style.display = 'flex';
+    }
+
+    function cerrarModalHistorial() {
+      document.getElementById('modalHistorial').style.display = 'none';
+    }
+
+    // --- CARGAR MENÚ Y LOGICA DE CHECKOUT ---
+    async function cargarMenu() {
+      const contenedor = document.getElementById('contenedorMenu');
+      const { data: productos, error } = await clientSupabase
+        .from('productos')
+        .select('*, subcategorias(id, nombre, categorias(id, nombre))');
+
+      if (error) {
+        contenedor.innerHTML = `<p style="color:red;">Error al cargar productos: ${error.message}</p>`;
+        return;
+      }
+
+      if (!productos || productos.length === 0) {
+        contenedor.innerHTML = `<p>No hay productos disponibles por el momento.</p>`;
+        return;
+      }
+
+      const agrupado = {};
+      
+      productos.forEach(prod => {
+        const cat = prod.subcategorias?.categorias?.nombre || "General";
+        const sub = prod.subcategorias?.nombre || "Varios";
+
+        if (cat.toLowerCase().includes('envio') || cat.toLowerCase().includes('envío') || 
+            sub.toLowerCase().includes('envio') || sub.toLowerCase().includes('envío') ||
+            prod.articulo.toLowerCase().includes('envio') || prod.articulo.toLowerCase().includes('envío')) {
+          
+          productoEnvioGlobal = prod;
+          document.getElementById('lblSubEnvio').innerText = `(+$${prod.precio})`;
+          return; 
+        }
+
+        if (!agrupado[cat]) agrupado[cat] = {};
+        if (!agrupado[cat][sub]) agrupado[cat][sub] = [];
+        agrupado[cat][sub].push(prod);
+      });
+
+      if (!productoEnvioGlobal) {
+        productoEnvioGlobal = { id: 99999, articulo: 'Servicio de Envío', precio: 1000 };
+        document.getElementById('lblSubEnvio').innerText = `(+$1000)`;
+      }
+
+      contenedor.innerHTML = "";
+      for (const [catNombre, subcats] of Object.entries(agrupado)) {
+        let htmlCat = `<div class="seccion-cat"><h2 class="titulo-cat">${catNombre}</h2>`;
+        
+        for (const [subNombre, prods] of Object.entries(subcats)) {
+          htmlCat += `<h3 class="titulo-subcat">${subNombre}</h3><div class="grid-productos">`;
+          
+          prods.forEach(p => {
+            const imgUrl = (p.text && p.text.length > 5) ? p.text : 'https://via.placeholder.com/200x130?text=La+Griega';
+            const prodJSON = JSON.stringify(p).replace(/'/g, "&apos;");
+
+            htmlCat += `
+              <div class="card-prod">
+                <img src="${imgUrl}" alt="${p.articulo}">
+                <div class="card-info">
+                  <h4>${p.articulo}</h4>
+                  <small>${p.capacidad || ''}</small>
+                  <div class="precio">$${p.precio}</div>
+                  <button class="btn-add" onclick='agregarAlCarrito(${prodJSON})'>+ Agregar</button>
+                </div>
+              </div>
+            `;
+          });
+          
+          htmlCat += `</div>`;
+        }
+        
+        htmlCat += `</div>`;
+        contenedor.innerHTML += htmlCat;
+      }
+    }
+
+    // LÓGICA DE SELECCIÓN DE MODO DE ENTREGA
+    function seleccionarModoEntrega(modo) {
+      tipoEntrega = modo;
+      const lblRetiro = document.getElementById('lblRetiro');
+      const lblEnvio = document.getElementById('lblEnvio');
+      const seccionEstadio = document.getElementById('seccionEstadio');
+
+      if (modo === 'envio') {
+        lblEnvio.classList.add('activa');
+        lblRetiro.classList.remove('activa');
+        lblEnvio.querySelector('input').checked = true;
+        seccionEstadio.style.display = 'block';
+        abrirModalEstadio();
+      } else {
+        lblRetiro.classList.add('activa');
+        lblEnvio.classList.remove('activa');
+        lblRetiro.querySelector('input').checked = true;
+        seccionEstadio.style.display = 'none';
+      }
+
+      renderizarCarrito();
+    }
+
+    /* MODAL DE ASIENTOS DE ESTADIO */
+    function abrirModalEstadio() {
+      document.getElementById('modalEstadio').style.display = 'flex';
+    }
+
+    function cerrarModalEstadio() {
+      document.getElementById('modalEstadio').style.display = 'none';
+    }
+
+    function loadSector(key) {
+      document.querySelectorAll('.sector-shape').forEach(el => el.classList.remove('active'));
+      const activeShape = document.getElementById('sec-' + key);
+      if(activeShape) activeShape.classList.add('active');
+
+      const sector = data[key];
+      if(!sector) return;
+
+      document.getElementById('sector-title').innerText = sector.nombre;
+      document.getElementById('sector-subtitle').innerText = 'Dirección de conteo: ' + (sector.direccion === 'LTR' ? 'Izquierda a Derecha' : 'Derecha a Izquierda');
+
+      const content = document.getElementById('panel-content');
+      content.innerHTML = '';
+
+      const container = document.createElement('div');
+      container.className = 'rows-container';
+
+      sector.filas.forEach((row) => {
+        const rowBlock = document.createElement('div');
+        rowBlock.className = 'row-block';
+
+        const rowTitle = document.createElement('div');
+        rowTitle.className = 'row-title';
+        rowTitle.innerText = 'Fila ' + row.nombre;
+        rowBlock.appendChild(rowTitle);
+
+        const grid = document.createElement('div');
+        grid.className = 'seats-grid';
+
+        let nums = [];
+        for (let i = 1; i <= row.asientos; i++) nums.push(i);
+        if (sector.direccion === 'RTL') nums.reverse();
+
+        nums.forEach(seatNum => {
+          const btn = document.createElement('button');
+          btn.className = 'btn-seat';
+          btn.innerText = seatNum;
+          btn.onclick = () => selectSeat(btn, sector.nombre, row.nombre, seatNum);
+          grid.appendChild(btn);
+        });
+
+        rowBlock.appendChild(grid);
+        container.appendChild(rowBlock);
+      });
+
+      content.appendChild(container);
+    }
+
+    function selectSeat(btn, sectorName, rowName, seatNum) {
+      if(activeSeatBtn) activeSeatBtn.classList.remove('selected');
+      btn.classList.add('selected');
+      activeSeatBtn = btn;
+
+      const textoIndicador = sectorName + ' | Fila ' + rowName + ' | Asiento #' + seatNum;
+      document.getElementById('selected-seat-desc').innerText = textoIndicador;
+      
+      ultimaUbicacion.sector = sectorName;
+      ultimaUbicacion.filaAsiento = 'Fila ' + rowName + ' | Asiento #' + seatNum;
+
+      document.getElementById('btnConfirmarAsiento').disabled = false;
+    }
+
+    function confirmarSeleccionDesdeIndicador() {
+      const indicadorTexto = document.getElementById('selected-seat-desc').innerText;
+      
+      if(indicadorTexto && indicadorTexto !== "Ninguno") {
+        const partes = indicadorTexto.split('|').map(p => p.trim());
+        
+        if(partes.length >= 3) {
+          document.getElementById('cli_sector').value = partes[0];
+          document.getElementById('cli_asiento').value = partes[1] + ', ' + partes[2];
+        } else {
+          document.getElementById('cli_sector').value = ultimaUbicacion.sector || indicadorTexto;
+          document.getElementById('cli_asiento').value = ultimaUbicacion.filaAsiento || '';
+        }
+        
+        cerrarModalEstadio();
+      }
+    }
+
+    function agregarAlCarrito(producto) {
+      const existe = carrito.find(item => item.id === producto.id);
+      if (existe) {
+        existe.cantidad += 1;
+      } else {
+        carrito.push({ ...producto, cantidad: 1 });
+      }
+      renderizarCarrito();
+    }
+
+    function cambiarCantidad(id, cambio) {
+      const index = carrito.findIndex(item => item.id === id);
+      if (index !== -1) {
+        carrito[index].cantidad += cambio;
+        if (carrito[index].cantidad <= 0) {
+          carrito.splice(index, 1);
+        }
+      }
+      renderizarCarrito();
+    }
+
+    function renderizarCarrito() {
+      const contenedorItems = document.getElementById('itemsCarrito');
+      const totalSpan = document.getElementById('totalPrecio');
+
+      if (carrito.length === 0 && tipoEntrega === 'retiro') {
+        contenedorItems.innerHTML = `<p style="color: #777; text-align: center; margin: 20px 0;">El carrito está vacío</p>`;
+        totalSpan.innerText = "0.00";
+        return;
+      }
+
+      contenedorItems.innerHTML = "";
+      let total = 0;
+
+      carrito.forEach(item => {
+        const subtotal = item.precio * item.cantidad;
+        total += subtotal;
+
+        contenedorItems.innerHTML += `
+          <div class="item-carrito">
+            <div>
+              <strong>${item.articulo}</strong><br>
+              <small>$${item.precio} c/u</small>
+            </div>
+            <div class="item-controles">
+              <button class="btn-cant" onclick="cambiarCantidad(${item.id}, -1)">-</button>
+              <span>${item.cantidad}</span>
+              <button class="btn-cant" onclick="cambiarCantidad(${item.id}, 1)">+</button>
+            </div>
+          </div>
+        `;
+      });
+
+      if (tipoEntrega === 'envio' && productoEnvioGlobal) {
+        total += parseFloat(productoEnvioGlobal.precio);
+        contenedorItems.innerHTML += `
+          <div class="item-carrito" style="color: #1e7e34; font-weight: bold;">
+            <div>
+              <span>🛵 ${productoEnvioGlobal.articulo || 'Envío a asiento'}</span>
+            </div>
+            <div>
+              <span>$${productoEnvioGlobal.precio}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      totalSpan.innerText = total.toFixed(2);
+    }
+
+    function generarCodigoUnico() {
+      const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let codigo = 'LG-';
+      for (let i = 0; i < 6; i++) {
+        codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+      }
+      return codigo;
+    }
+
+    // Confirmar Pedido e Invocar Mercado Pago
+    async function confirmarPedido() {
+      if (carrito.length === 0) {
+        alert("Agrega al menos un producto al carrito antes de comprar.");
+        return;
+      }
+
+      const nombre = document.getElementById('cli_nombre').value.trim();
+      const apellido = document.getElementById('cli_apellido').value.trim();
+      const sector = document.getElementById('cli_sector').value.trim();
+      const asiento = document.getElementById('cli_asiento').value.trim();
+      const observaciones = document.getElementById('cli_observaciones').value.trim();
+
+      if (!nombre || !apellido) {
+        alert("Por favor, ingresa tu Nombre y Apellido.");
+        return;
+      }
+
+      if (tipoEntrega === 'envio' && (!sector || !asiento)) {
+        alert("Indica tu Sector/Tribuna y Fila/Asiento para enviarte el pedido.");
+        return;
+      }
+
+      const codigoCompra = generarCodigoUnico();
+      const total = parseFloat(document.getElementById('totalPrecio').innerText);
+
+      let listaItems = carrito.map(i => ({ articulo: i.articulo, cantidad: i.cantidad, precio: i.precio }));
+      if (tipoEntrega === 'envio' && productoEnvioGlobal) {
+        listaItems.push({ articulo: productoEnvioGlobal.articulo || 'Envío a Asiento', cantidad: 1, precio: productoEnvioGlobal.precio });
+      }
+
+      const pedidoPayload = {
+        codigo_compra: codigoCompra,
+        cliente_nombre: `${nombre} ${apellido}`,
+        sector: tipoEntrega === 'envio' ? sector : 'Retiro en Buffet',
+        asiento: tipoEntrega === 'envio' ? asiento : 'N/A',
+        observaciones: observaciones || '',
+        items: listaItems,
+        total: total,
+        estado: 'Pendiente'
+      };
+
+      // 1. Guardar en memoria local
+      guardarDatosClienteLocal(nombre, apellido, sector, asiento);
+      guardarPedidoEnHistorial(codigoCompra, total, listaItems);
+
+      // 2. Guardar pedido en Supabase
+      const { error } = await clientSupabase.from('pedidos').insert([pedidoPayload]);
+      if (error) {
+        alert("Error al registrar el pedido: " + error.message);
+        return;
+      }
+
+      try {
+        // 3. Generar la preferencia en Mercado Pago
+        const { data, error: funcError } = await clientSupabase.functions.invoke('crear-preferencia', {
+          body: { 
+            items: listaItems, 
+            codigo_compra: codigoCompra, 
+            cliente_nombre: `${nombre} ${apellido}` 
+          }
+        });
+
+        if (funcError || !data?.init_point) {
+          throw new Error(funcError?.message || "No se pudo generar el link de pago.");
+        }
+
+        // 4. Redirigir al cliente a pagar
+        window.location.href = data.init_point;
+
+      } catch (err) {
+        alert("Hubo un error al procesar el pago con Mercado Pago: " + err.message);
+      }
+    }
+
+    // Inicialización al cargar la página
+    cargarMenu();
+    cargarDatosAutocompletados();
+  </script>
+</body>
+</html>
