@@ -447,9 +447,12 @@
     // --- CARGAR MENÚ Y LOGICA DE CHECKOUT ---
     async function cargarMenu() {
       const contenedor = document.getElementById('contenedorMenu');
+      
+      // FILTRO: Solo se obtienen productos con cantidad mayor a 0
       const { data: productos, error } = await clientSupabase
         .from('productos')
-        .select('*, subcategorias(id, nombre, categorias(id, nombre))');
+        .select('*, subcategorias(id, nombre, categorias(id, nombre))')
+        .gt('cantidad', 0);
 
       if (error) {
         contenedor.innerHTML = `<p style="color:red;">Error al cargar productos: ${error.message}</p>`;
@@ -457,7 +460,7 @@
       }
 
       if (!productos || productos.length === 0) {
-        contenedor.innerHTML = `<p>No hay productos disponibles por el momento.</p>`;
+        contenedor.innerHTML = `<p style="text-align: center; font-weight: bold; padding: 20px;">No hay productos con stock disponibles por el momento.</p>`;
         return;
       }
 
